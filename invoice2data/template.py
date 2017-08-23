@@ -151,7 +151,7 @@ class InvoiceTemplate(OrderedDict):
         # Try to find data for each field.
         output = {}
         output['issuer'] = self['issuer']
-        
+
         for k, v in self['fields'].items():
             if k.startswith('static_'):
                 logger.debug("field=%s | static value=%s", k, v)
@@ -185,6 +185,23 @@ class InvoiceTemplate(OrderedDict):
                         output[k] = res_find[0]
                 else:
                     logger.warning("regexp for field %s didn't match", k)
+
+        if 'repeated_fields' in self:
+            for k, v in self['repeated_fields'].items():
+                logger.debug('repeated_field=%s | regexp=%s', k, v)
+                if type(v) is list:
+                    for v_option in v:
+                        res_find = re.findall(v_option, optimized_str)
+                        if res_find:
+                            break
+                else:
+                    res_find = re.findall(v, optimized_str)
+
+                if res_find:
+                    logger.debug('res_find=%s', res_find)
+                    output[k] = res_find
+                else:
+                    logger.warning("regexp for repeated_field %s didn't match", k)
 
         if 'lines' in self:
             self.extract_lines(optimized_str, output)
